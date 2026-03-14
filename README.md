@@ -1,19 +1,26 @@
 # Linux Caps Lock Fix
 
-## The Problem
-By default, Linux distributions mimic old physical typewriters in the way Caps lock works:   
-* **ON:** Activates immediately when you press the key down.  
-* **OFF:** Activates only once you **release** the key.  
+Fork of [TreeOfSelf/Linux-Capslock-Fix](https://github.com/TreeOfSelf/Linux-Capslock-Fix) with fixes for boot race conditions and multi-keyboard support.
 
-This "delay" often leads to `HEllo` style typos where the first two letters of a word are capitalized because you haven't lifted your finger off the Caps Lock key fast enough.   
+## The Problem
+By default, Linux distributions mimic old physical typewriters in the way Caps lock works:
+* **ON:** Activates immediately when you press the key down.
+* **OFF:** Activates only once you **release** the key.
+
+This "delay" often leads to `HEllo` style typos where the first two letters of a word are capitalized because you haven't lifted your finger off the Caps Lock key fast enough.
 This script makes the toggle instant for both states.
 
-## **Why not [Linux-CapsLock-Delay-Fixer](https://github.com/hexvalid/Linux-CapsLock-Delay-Fixer)?**  
-Because, that repo has an annoying bug where if you press Capslock and a button with a modifier (like ".") it will act like a shift (and type something like ">").
+## What's different from the original?
+
+- **Boot race condition fix:** The original script waits for a keypress before grabbing the keyboard, which causes a race condition with Wayland compositors (GNOME/Mutter, Niri, etc). The compositor loses keyboard input until you switch TTY. This fork grabs all keyboards immediately on startup and starts `Before=display-manager.service` so the virtual device is ready before the compositor starts.
+- **Multi-keyboard support:** The original only grabs one keyboard. This fork grabs all connected keyboards and automatically picks up new ones when plugged in.
+
+## **Why not [Linux-CapsLock-Delay-Fixer](https://github.com/hexvalid/Linux-CapsLock-Delay-Fixer)?**
+Because, that repo has an annoying bug where if you press Capslock and a button with a modifier (like ".") it will act like a shift (and type something like ">"). It also only works on X11, not Wayland.
 
 ## Quick Install
 ```bash
-curl -O https://raw.githubusercontent.com/TreeOfSelf/Linux-Capslock-Fix/main/install.py
+curl -O https://raw.githubusercontent.com/alhnesn/Linux-Capslock-Fix/main/install.py
 chmod +x install.py
 sudo python3 ./install.py
 ```
@@ -52,7 +59,7 @@ Paste:
 ```ini
 [Unit]
 Description=Caps Lock Instant Toggle Fix
-After=systemd-user-sessions.service
+Before=display-manager.service
 
 [Service]
 Type=simple
@@ -82,18 +89,5 @@ Done. Runs on boot automatically.
 
 ## Uninstall
 ```bash
-sudo systemctl stop capslock-fix.service
-sudo systemctl disable capslock-fix.service
-sudo rm /etc/systemd/system/capslock-fix.service
-sudo rm /usr/local/bin/capslock-fix.py
-sudo systemctl daemon-reload
+sudo python3 ./uninstall.py
 ```
-
-## But this is how it is supposed to work!
-Yes, I have heard the argument before. Old typewriters used to have physical latches, the default behavior of Caps lock in Linux mimics this.   
-But it is not pleasant to type with, no other OS does this, and it interrupts the flow of typing (especially for people who rely on Caps lock for capitalizing)   
-Sometimes ergonomics and user-friendliness are preferred over being "historically correct".      
-We aren't here to debate, we just want our computers to work the way we want them to. 
-
-## Special thanks
-[tzrtvevo](https://github.com/tzrtvevo) - for helping fix a bug and greatly improving the installation process 
